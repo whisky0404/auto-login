@@ -2,8 +2,14 @@ name: 2Pink Auto Active
 
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * *'    # 8:00 sáng VN → BẬT
+    - cron: '45 1 * * *'   # 8:45 sáng VN → TẮT
   workflow_dispatch:
+    inputs:
+      action:
+        description: 'on hoặc off'
+        required: false
+        default: 'on'
 
 jobs:
   run:
@@ -25,4 +31,5 @@ jobs:
         env:
           USERNAME_2PINK: ${{ secrets.USERNAME_2PINK }}
           PASSWORD_2PINK: ${{ secrets.PASSWORD_2PINK }}
+          ACTION: ${{ github.event_name == 'workflow_dispatch' && inputs.action || (github.event.schedule == '45 1 * * *' && 'off' || 'on') }}
         run: python auto_login.py
