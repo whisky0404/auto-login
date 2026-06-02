@@ -4,8 +4,8 @@ from playwright.async_api import async_playwright
 
 LOGIN_URL     = "https://2pink.org/"
 DASHBOARD_URL = "https://2pink.org/dashboard/live-traffic"
-USERNAME      = os.environ["accmoiq10@gmail.com"]
-PASSWORD      = os.environ["27101992Long@"]
+USERNAME      = os.environ["USERNAME_2PINK"]
+PASSWORD      = os.environ["PASSWORD_2PINK"]
 
 async def run():
     async with async_playwright() as p:
