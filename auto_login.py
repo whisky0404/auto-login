@@ -12,41 +12,38 @@ async def run():
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
 
-        # 1. Vào trang chủ
         await page.goto(LOGIN_URL)
         await page.wait_for_load_state("networkidle")
 
-        # 2. Click nút Đăng nhập để mở popup
         await page.click("text=Đăng nhập")
         await page.wait_for_timeout(2000)
 
-        # 3. Điền username & password (đúng selector)
         await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", USERNAME)
         await page.fill("#ctl00_ContentPlaceHolder1_txtPass", PASSWORD)
-
-        # 4. Click nút đăng nhập
         await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
         print("✅ Đã đăng nhập!")
 
-        # 5. Vào dashboard Live Traffic
         await page.goto(DASHBOARD_URL)
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
 
-        # 6. Bật toggle Active Domain nếu đang tắt
+        # Toggle ẩn → cần check qua JS rồi click label
         try:
-            toggle = page.locator("input[type='checkbox']").first
-            is_checked = await toggle.is_checked()
+            checkbox = page.locator("input[type='checkbox']").first
+            checkbox_id = await checkbox.get_attribute("id")
+            is_checked = await page.evaluate(f"document.getElementById('{checkbox_id}').checked")
+
             if not is_checked:
-                await toggle.click()
+                # Click label tương ứng thay vì checkbox
+                await page.evaluate(f"document.getElementById('{checkbox_id}').click()")
                 await page.wait_for_timeout(1000)
                 print("✅ Đã bật Active Domain!")
             else:
                 print("ℹ️ Active Domain đã bật sẵn rồi!")
         except Exception as e:
-            print(f"⚠️ Không tìm thấy toggle: {e}")
+            print(f"⚠️ Lỗi toggle: {e}")
 
         await browser.close()
 
