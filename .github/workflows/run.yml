@@ -3,8 +3,8 @@ name: 2Pink Auto Active
 on:
   schedule:
     # Account 1 - Lần 1
-    - cron: '0 1 * * *'     # 8:00 VN → BẬT
-    - cron: '45 1 * * *'    # 8:45 VN → TẮT
+    - cron: '47 12 * * *'     # 8:00 VN → BẬT
+    - cron: '45 13 * * *'    # 8:45 VN → TẮT
     # Account 2 - Lần 1
     - cron: '11 2 * * *'    # 9:11 VN → BẬT
     - cron: '0 3 * * *'     # 10:00 VN → TẮT
