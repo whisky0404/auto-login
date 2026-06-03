@@ -1,32 +1,6 @@
 name: 2Pink Auto Active
 
 on:
-  schedule:
-    # Account 1 - Lần 1
-    - cron: '40 15 * * *'     # 8:00 VN → BẬT
-    - cron: '42 15 * * *'    # 8:45 VN → TẮT
-    # Account 2 - Lần 1
-    - cron: '11 2 * * *'    # 9:11 VN → BẬT
-    - cron: '0 3 * * *'     # 10:00 VN → TẮT
-    # Account 3 - Lần 1
-    - cron: '22 3 * * *'    # 10:22 VN → BẬT
-    - cron: '15 4 * * *'    # 11:15 VN → TẮT
-    # Account 4 - Lần 1
-    - cron: '30 4 * * *'    # 11:30 VN → BẬT
-    - cron: '15 5 * * *'    # 12:15 VN → TẮT
-    # Account 1 - Lần 2
-    - cron: '0 6 * * *'     # 13:00 VN → BẬT
-    - cron: '45 6 * * *'    # 13:45 VN → TẮT
-    # Account 2 - Lần 2
-    - cron: '50 6 * * *'    # 13:50 VN → BẬT
-    - cron: '33 7 * * *'    # 14:33 VN → TẮT
-    # Account 3 - Lần 2
-    - cron: '22 8 * * *'    # 15:22 VN → BẬT
-    - cron: '15 9 * * *'    # 16:15 VN → TẮT
-    # Account 4 - Lần 2
-    - cron: '30 9 * * *'    # 16:30 VN → BẬT
-    - cron: '10 10 * * *'   # 17:10 VN → TẮT
-
   workflow_dispatch:
     inputs:
       account:
@@ -57,51 +31,9 @@ jobs:
       - name: Determine account and action
         id: config
         run: |
-          SCHEDULE="${{ github.event.schedule }}"
-
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ACCOUNT=${{ inputs.account }}" >> $GITHUB_ENV
             echo "ACTION=${{ inputs.action }}" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "40 15 * * *" ]; then
-            echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "42 15 * * *" ]; then
-            echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "11 2 * * *" ]; then
-            echo "ACCOUNT=2" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "0 3 * * *" ]; then
-            echo "ACCOUNT=2" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "22 3 * * *" ]; then
-            echo "ACCOUNT=3" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "15 4 * * *" ]; then
-            echo "ACCOUNT=3" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "30 4 * * *" ]; then
-            echo "ACCOUNT=4" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "15 5 * * *" ]; then
-            echo "ACCOUNT=4" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "0 6 * * *" ]; then
-            echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "45 6 * * *" ]; then
-            echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "50 6 * * *" ]; then
-            echo "ACCOUNT=2" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "33 7 * * *" ]; then
-            echo "ACCOUNT=2" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "22 8 * * *" ]; then
-            echo "ACCOUNT=3" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "15 9 * * *" ]; then
-            echo "ACCOUNT=3" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
-
-          elif [ "$SCHEDULE" = "30 9 * * *" ]; then
-            echo "ACCOUNT=4" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
-          elif [ "$SCHEDULE" = "10 10 * * *" ]; then
-            echo "ACCOUNT=4" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
           fi
 
       - name: Run script
