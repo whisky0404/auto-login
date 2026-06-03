@@ -3,7 +3,7 @@ name: 2Pink Auto Active
 on:
   schedule:
     # Account 1 - Lần 1
-    - cron: '55 13 * * *'     # 8:00 VN → BẬT
+    - cron: '0 1 * * *'     # 8:00 VN → BẬT
     - cron: '45 1 * * *'    # 8:45 VN → TẮT
     # Account 2 - Lần 1
     - cron: '11 2 * * *'    # 9:11 VN → BẬT
@@ -63,7 +63,7 @@ jobs:
             echo "ACCOUNT=${{ inputs.account }}" >> $GITHUB_ENV
             echo "ACTION=${{ inputs.action }}" >> $GITHUB_ENV
 
-          elif [ "$SCHEDULE" = "55 13 * * *" ]; then
+          elif [ "$SCHEDULE" = "0 1 * * *" ]; then
             echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=on" >> $GITHUB_ENV
           elif [ "$SCHEDULE" = "45 1 * * *" ]; then
             echo "ACCOUNT=1" >> $GITHUB_ENV; echo "ACTION=off" >> $GITHUB_ENV
