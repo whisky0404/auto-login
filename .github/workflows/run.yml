@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       account:
-        description: 'Số tài khoản (1, 2, 3, 4)'
+        description: 'Số tài khoản (1, 2, 3, 4, 5, 6)'
         required: true
         default: '1'
       action:
@@ -29,7 +29,6 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Determine account and action
-        id: config
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "ACCOUNT=${{ inputs.account }}" >> $GITHUB_ENV
@@ -38,8 +37,8 @@ jobs:
 
       - name: Run script
         env:
-          USERNAME_2PINK: ${{ env.ACCOUNT == '1' && secrets.USERNAME_2PINK_1 || env.ACCOUNT == '2' && secrets.USERNAME_2PINK_2 || env.ACCOUNT == '3' && secrets.USERNAME_2PINK_3 || secrets.USERNAME_2PINK_4 }}
-          PASSWORD_2PINK: ${{ env.ACCOUNT == '1' && secrets.PASSWORD_2PINK_1 || env.ACCOUNT == '2' && secrets.PASSWORD_2PINK_2 || env.ACCOUNT == '3' && secrets.PASSWORD_2PINK_3 || secrets.PASSWORD_2PINK_4 }}
+          USERNAME_2PINK: ${{ env.ACCOUNT == '1' && secrets.USERNAME_2PINK_1 || env.ACCOUNT == '2' && secrets.USERNAME_2PINK_2 || env.ACCOUNT == '3' && secrets.USERNAME_2PINK_3 || env.ACCOUNT == '4' && secrets.USERNAME_2PINK_4 || env.ACCOUNT == '5' && secrets.USERNAME_2PINK_5 || secrets.USERNAME_2PINK_6 }}
+          PASSWORD_2PINK: ${{ env.ACCOUNT == '1' && secrets.PASSWORD_2PINK_1 || env.ACCOUNT == '2' && secrets.PASSWORD_2PINK_2 || env.ACCOUNT == '3' && secrets.PASSWORD_2PINK_3 || env.ACCOUNT == '4' && secrets.PASSWORD_2PINK_4 || env.ACCOUNT == '5' && secrets.PASSWORD_2PINK_5 || secrets.PASSWORD_2PINK_6 }}
           ACTION: ${{ env.ACTION }}
           ACCOUNT: ${{ env.ACCOUNT }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
