@@ -32,10 +32,10 @@ def send_email(success: bool):
 
     status = "✅ Thành công" if success else "❌ Thất bại"
     action_text = "BẬT" if ACTION == "on" else "TẮT"
-    subject = f"[2Pink] Account {ACCOUNT} - {action_text} - {status}"
+    subject = f"Account {ACCOUNT} {action_text}"
 
     body = f"""
-<h2>2Pink Auto Active - Báo cáo</h2>
+<h2>Báo cáo tự động</h2>
 <table border="1" cellpadding="6" cellspacing="0">
   <tr><td><b>Tài khoản</b></td><td>Account {ACCOUNT}</td></tr>
   <tr><td><b>Hành động</b></td><td>{action_text}</td></tr>
