@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       account:
-        description: 'Số tài khoản (1, 2, 3, 4, 5, 6)'
+        description: 'Số tài khoản (1, 2, 3, 4, 5, 6, 7, 8)'
         required: true
         default: '1'
       action:
@@ -35,10 +35,39 @@ jobs:
             echo "ACTION=${{ inputs.action }}" >> $GITHUB_ENV
           fi
 
+      - name: Select credentials
+        run: |
+          ACCOUNT="${{ env.ACCOUNT }}"
+          if [ "$ACCOUNT" = "1" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_1 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_1 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "2" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_2 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_2 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "3" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_3 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_3 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "4" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_4 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_4 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "5" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_5 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_5 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "6" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_6 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_6 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "7" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_7 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_7 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "8" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_8 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_8 }}" >> $GITHUB_ENV
+          fi
+
       - name: Run script
         env:
-          USERNAME_2PINK: ${{ env.ACCOUNT == '1' && secrets.USERNAME_2PINK_1 || env.ACCOUNT == '2' && secrets.USERNAME_2PINK_2 || env.ACCOUNT == '3' && secrets.USERNAME_2PINK_3 || env.ACCOUNT == '4' && secrets.USERNAME_2PINK_4 || env.ACCOUNT == '5' && secrets.USERNAME_2PINK_5 || secrets.USERNAME_2PINK_6 }}
-          PASSWORD_2PINK: ${{ env.ACCOUNT == '1' && secrets.PASSWORD_2PINK_1 || env.ACCOUNT == '2' && secrets.PASSWORD_2PINK_2 || env.ACCOUNT == '3' && secrets.PASSWORD_2PINK_3 || env.ACCOUNT == '4' && secrets.PASSWORD_2PINK_4 || env.ACCOUNT == '5' && secrets.PASSWORD_2PINK_5 || secrets.PASSWORD_2PINK_6 }}
+          USERNAME_2PINK: ${{ env.USERNAME_2PINK }}
+          PASSWORD_2PINK: ${{ env.PASSWORD_2PINK }}
           ACTION: ${{ env.ACTION }}
           ACCOUNT: ${{ env.ACCOUNT }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
