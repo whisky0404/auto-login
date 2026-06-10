@@ -17,6 +17,8 @@ ACCOUNT       = os.environ.get("ACCOUNT", "?")
 GMAIL_USER    = os.environ.get("GMAIL_USER", "")
 GMAIL_PASS    = os.environ.get("GMAIL_APP_PASSWORD", "")
 
+MAX_RETRIES   = 3  # Số lần thử lại nếu thất bại
+
 logs = []
 
 def log(msg):
@@ -60,55 +62,67 @@ def send_email(success: bool):
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
+async def attempt(p):
+    """1 lần thử đăng nhập và toggle"""
+    browser = await p.chromium.launch(headless=True)
+    page = await browser.new_page()
+
+    try:
+        await page.goto(LOGIN_URL)
+        await page.wait_for_load_state("networkidle")
+
+        await page.click("text=Đăng nhập", timeout=60000)
+        await page.wait_for_timeout(2000)
+
+        await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", USERNAME)
+        await page.fill("#ctl00_ContentPlaceHolder1_txtPass", PASSWORD)
+        await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(2000)
+        log("✅ Đã đăng nhập!")
+
+        await page.goto(DASHBOARD_URL)
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(2000)
+
+        checkbox = page.locator("input[type='checkbox']").first
+        checkbox_id = await checkbox.get_attribute("id")
+        is_checked = await page.evaluate(f"document.getElementById('{checkbox_id}').checked")
+
+        if ACTION == "on" and not is_checked:
+            await page.evaluate(f"document.getElementById('{checkbox_id}').click()")
+            await page.wait_for_timeout(1000)
+            log("✅ Đã BẬT Active Domain!")
+        elif ACTION == "off" and is_checked:
+            await page.evaluate(f"document.getElementById('{checkbox_id}').click()")
+            await page.wait_for_timeout(1000)
+            log("✅ Đã TẮT Active Domain!")
+        else:
+            log(f"ℹ️ Active Domain đã ở trạng thái {'bật' if is_checked else 'tắt'} rồi, không cần thay đổi.")
+
+        return True
+
+    finally:
+        await browser.close()
+
 async def run():
     success = False
-    try:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
 
-            await page.goto(LOGIN_URL)
-            await page.wait_for_load_state("networkidle")
-
-            await page.click("text=Đăng nhập")
-            await page.wait_for_timeout(2000)
-
-            await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", USERNAME)
-            await page.fill("#ctl00_ContentPlaceHolder1_txtPass", PASSWORD)
-            await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-            log("✅ Đã đăng nhập!")
-
-            await page.goto(DASHBOARD_URL)
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-
+    async with async_playwright() as p:
+        for i in range(1, MAX_RETRIES + 1):
             try:
-                checkbox = page.locator("input[type='checkbox']").first
-                checkbox_id = await checkbox.get_attribute("id")
-                is_checked = await page.evaluate(f"document.getElementById('{checkbox_id}').checked")
+                if i > 1:
+                    log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
+                    await asyncio.sleep(10)  # Chờ 10 giây trước khi thử lại
 
-                if ACTION == "on" and not is_checked:
-                    await page.evaluate(f"document.getElementById('{checkbox_id}').click()")
-                    await page.wait_for_timeout(1000)
-                    log("✅ Đã BẬT Active Domain!")
-                    success = True
-                elif ACTION == "off" and is_checked:
-                    await page.evaluate(f"document.getElementById('{checkbox_id}').click()")
-                    await page.wait_for_timeout(1000)
-                    log("✅ Đã TẮT Active Domain!")
-                    success = True
-                else:
-                    log(f"ℹ️ Active Domain đã ở trạng thái {'bật' if is_checked else 'tắt'} rồi, không cần thay đổi.")
-                    success = True
+                success = await attempt(p)
+                if success:
+                    break
+
             except Exception as e:
-                log(f"⚠️ Lỗi toggle: {e}")
-
-            await browser.close()
-
-    except Exception as e:
-        log(f"❌ Lỗi nghiêm trọng: {e}")
+                log(f"⚠️ Lần {i} thất bại: {e}")
+                if i == MAX_RETRIES:
+                    log("❌ Đã thử 3 lần, không thành công!")
 
     send_email(success)
 
