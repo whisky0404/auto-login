@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       account:
-        description: 'Số tài khoản (1-12)'
+        description: 'Số tài khoản (1-20)'
         required: true
         default: '1'
       action:
@@ -72,6 +72,30 @@ jobs:
           elif [ "$ACCOUNT" = "12" ]; then
             echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_12 }}" >> $GITHUB_ENV
             echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_12 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "13" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_13 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_13 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "14" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_14 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_14 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "15" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_15 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_15 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "16" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_16 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_16 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "17" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_17 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_17 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "18" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_18 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_18 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "19" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_19 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_19 }}" >> $GITHUB_ENV
+          elif [ "$ACCOUNT" = "20" ]; then
+            echo "USERNAME_2PINK=${{ secrets.USERNAME_2PINK_20 }}" >> $GITHUB_ENV
+            echo "PASSWORD_2PINK=${{ secrets.PASSWORD_2PINK_20 }}" >> $GITHUB_ENV
           fi
 
       - name: Run script
