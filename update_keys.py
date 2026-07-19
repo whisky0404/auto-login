@@ -11,8 +11,7 @@ from playwright.async_api import async_playwright
 
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTlV3fKG5HQjME5OYZ--vk7TMwaSkd_OZZMN4aMvEtLNx_wx7jCFhfu-L9eD74rXage674hucpO7dfR/pub?gid=0&single=true&output=csv"
 
-LOGIN_URL     = "https://2pink.org/"
-DASHBOARD_URL = "https://2pink.org/dashboard/live-traffic"
+LOGIN_URL = "https://2pink.org/"
 
 USERNAME  = os.environ["USERNAME_2PINK"]
 PASSWORD  = os.environ["PASSWORD_2PINK"]
@@ -21,9 +20,10 @@ ACCOUNT   = os.environ.get("ACCOUNT", "?")
 GMAIL_USER = os.environ.get("GMAIL_USER", "")
 GMAIL_PASS = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-ACCOUNT_RANGES = {
-    "1": (1, 5),
-    "2": (6, 10),
+# Cấu hình từng tài khoản: (STT từ, STT đến, URL dashboard)
+ACCOUNT_CONFIG = {
+    "1": (1,  5,  "https://2pink.org/dashboard/live-traffic/ivivucom-262112"),
+    "2": (6,  10, "https://2pink.org/dashboard/live-traffic/wwwivivucom-263440"),
 }
 
 MAX_RETRIES = 3
@@ -98,7 +98,7 @@ def send_email(success: bool, keywords: list):
 async def update_one(page, row_index, kw):
     log(f"🔄 [{row_index+1}/5] Cập nhật STT {kw['stt']}: {kw['key']}")
 
-    # Click vào LinkButton để mở form sửa
+    # Click vào LinkButton để mở form sửa (ctrl0, ctrl1, ctrl2...)
     link_id = f"#ctl00_ContentPlaceHolder1_ListView1_ctrl{row_index}_LinkButton1"
     log(f"🔍 Click: {link_id}")
     await page.click(link_id, timeout=60000)
@@ -131,11 +131,12 @@ async def update_one(page, row_index, kw):
 
     log(f"✅ [{row_index+1}/5] Xong: {kw['key']} | {rand_time}s")
 
-async def attempt(p, keywords):
+async def attempt(p, keywords, dashboard_url):
     browser = await p.chromium.launch(headless=True)
     page = await browser.new_page()
 
     try:
+        # Đăng nhập
         await page.goto(LOGIN_URL)
         await page.wait_for_load_state("networkidle")
         await page.click("text=Đăng nhập", timeout=60000)
@@ -148,11 +149,13 @@ async def attempt(p, keywords):
         await page.wait_for_timeout(2000)
         log("✅ Đã đăng nhập!")
 
-        await page.goto(DASHBOARD_URL)
+        # Vào đúng dashboard của tài khoản
+        await page.goto(dashboard_url)
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
-        log("✅ Đã vào dashboard!")
+        log(f"✅ Đã vào dashboard: {dashboard_url}")
 
+        # Cập nhật lần lượt từng keyword
         for i, kw in enumerate(keywords):
             await update_one(page, i, kw)
 
@@ -165,11 +168,11 @@ async def attempt(p, keywords):
         await browser.close()
 
 async def run():
-    if ACCOUNT not in ACCOUNT_RANGES:
+    if ACCOUNT not in ACCOUNT_CONFIG:
         log(f"❌ Account {ACCOUNT} chưa được cấu hình!")
         return
 
-    stt_from, stt_to = ACCOUNT_RANGES[ACCOUNT]
+    stt_from, stt_to, dashboard_url = ACCOUNT_CONFIG[ACCOUNT]
     log(f"📥 Đọc keywords STT {stt_from}-{stt_to} từ Google Sheet...")
     keywords = fetch_keywords(stt_from, stt_to)
     log(f"✅ Đọc được {len(keywords)} keywords")
@@ -181,7 +184,7 @@ async def run():
                 if i > 1:
                     log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
                     await asyncio.sleep(10)
-                success = await attempt(p, keywords)
+                success = await attempt(p, keywords, dashboard_url)
                 if success:
                     break
             except Exception as e:
