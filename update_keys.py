@@ -139,7 +139,7 @@ async def update_one(page, dashboard_url, row_index, kw):
     log(f"🔗 URL: {kw['url']}")
 
     # Thời gian chờ random 25-115 giây
-    rand_time = random.randint(25, 115)
+    rand_time = random.randint(25, 45)
     await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
     await page.wait_for_timeout(300)
     log(f"⏱️ Thời gian chờ: {rand_time}s")
