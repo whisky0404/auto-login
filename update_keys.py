@@ -108,98 +108,104 @@ def send_email(success: bool, keywords: list, account: str):
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(GMAIL_USER, GMAIL_PASS)
             server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
-        print(f"📧 Đã gửi email báo cáo account {account}!")
+        print("📧 Đã gửi email báo cáo!")
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
-async def update_one(page, row_index, kw):
-    log(f"🔄 [{row_index+1}/5] Cập nhật STT {kw['stt']}: {kw['key']}")
+async def update_one(page, dashboard_url, row_index, kw):
+    log(f"🔄 [{row_index+1}/5] STT {kw['stt']}: {kw['key']}")
 
+    # Reload dashboard trước mỗi lần để đảm bảo danh sách fresh
+    await page.goto(dashboard_url)
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
+
+    # Click vào link theo index
     links = page.locator("a[id*='ListView1'][id*='LinkButton1']")
+    count = await links.count()
+    log(f"🔍 Tìm thấy {count} links, click index {row_index}")
     await links.nth(row_index).click()
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
+    # Điền keyword
     await page.fill("#ctl00_ContentPlaceHolder1_txtKeyWord", kw["key"])
     await page.wait_for_timeout(300)
+    log(f"✏️ Keyword: {kw['key']}")
 
+    # Điền URL
     await page.fill("#ctl00_ContentPlaceHolder1_txtStep1", kw["url"])
     await page.wait_for_timeout(300)
+    log(f"🔗 URL: {kw['url']}")
 
+    # Thời gian chờ random 25-115 giây
     rand_time = random.randint(25, 115)
     await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
     await page.wait_for_timeout(300)
+    log(f"⏱️ Thời gian chờ: {rand_time}s")
 
+    # Bấm Cập nhật Url
     await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
-    log(f"✅ [{row_index+1}/5] Xong STT {kw['stt']} | {rand_time}s")
+    log(f"✅ [{row_index+1}/5] Xong STT {kw['stt']}")
 
-async def process_account(p, account):
-    if account not in ACCOUNT_CONFIG:
-        log(f"❌ Account {account} chưa được cấu hình!")
+async def attempt(p, keywords, dashboard_url):
+    browser = await p.chromium.launch(headless=True)
+    page = await browser.new_page()
+
+    try:
+        # Đăng nhập
+        await page.goto(LOGIN_URL)
+        await page.wait_for_load_state("networkidle")
+        await page.click("text=Đăng nhập", timeout=60000)
+        await page.wait_for_timeout(2000)
+
+        await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", USERNAME)
+        await page.fill("#ctl00_ContentPlaceHolder1_txtPass", PASSWORD)
+        await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
+        await page.wait_for_load_state("networkidle")
+        await page.wait_for_timeout(2000)
+        log("✅ Đã đăng nhập!")
+
+        # Cập nhật từng keyword — mỗi lần reload dashboard
+        for i, kw in enumerate(keywords):
+            await update_one(page, dashboard_url, i, kw)
+
+        return True
+
+    except Exception as e:
+        log(f"❌ Lỗi: {e}")
         return False
+    finally:
+        await browser.close()
 
-    stt_from, stt_to, dashboard_url = ACCOUNT_CONFIG[account]
-    log(f"\n{'='*40}")
-    log(f"📋 Bắt đầu Account {account} - STT {stt_from}-{stt_to}")
-    log(f"{'='*40}")
+async def run():
+    if ACCOUNT not in ACCOUNT_CONFIG:
+        log(f"❌ Account {ACCOUNT} chưa được cấu hình!")
+        return
 
+    stt_from, stt_to, dashboard_url = ACCOUNT_CONFIG[ACCOUNT]
+    log(f"📥 Đọc keywords STT {stt_from}-{stt_to} từ Google Sheet...")
     keywords = fetch_keywords(stt_from, stt_to)
     log(f"✅ Đọc được {len(keywords)} keywords")
 
     success = False
-    for i in range(1, MAX_RETRIES + 1):
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        try:
-            if i > 1:
-                log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
-                await asyncio.sleep(10)
-
-            await page.goto(LOGIN_URL)
-            await page.wait_for_load_state("networkidle")
-            await page.click("text=Đăng nhập", timeout=60000)
-            await page.wait_for_timeout(2000)
-
-            await page.fill("#ctl00_ContentPlaceHolder1_txtUserName", USERNAME)
-            await page.fill("#ctl00_ContentPlaceHolder1_txtPass", PASSWORD)
-            await page.click("#ctl00_ContentPlaceHolder1_btnDangNhap")
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-            log(f"✅ Đã đăng nhập account {account}!")
-
-            await page.goto(dashboard_url)
-            await page.wait_for_load_state("networkidle")
-            await page.wait_for_timeout(2000)
-            log(f"✅ Đã vào dashboard!")
-
-            for j, kw in enumerate(keywords):
-                await update_one(page, j, kw)
-
-            success = True
-            break
-
-        except Exception as e:
-            log(f"⚠️ Lần {i} thất bại: {e}")
-            if i == MAX_RETRIES:
-                log(f"❌ Account {account} thất bại sau 3 lần!")
-        finally:
-            await browser.close()
-
-    send_email(success, keywords, account)
-    return success
-
-async def run():
-    # Lấy danh sách account cần chạy
-    accounts_str = os.environ.get("ACCOUNTS", ACCOUNT)
-    accounts = [a.strip() for a in accounts_str.split(",")]
-
-    log(f"🚀 Bắt đầu chạy {len(accounts)} account: {', '.join(accounts)}")
-
     async with async_playwright() as p:
-        for acc in accounts:
-            await process_account(p, acc)
+        for i in range(1, MAX_RETRIES + 1):
+            try:
+                if i > 1:
+                    log(f"🔄 Thử lại lần {i}/{MAX_RETRIES}...")
+                    await asyncio.sleep(10)
+                success = await attempt(p, keywords, dashboard_url)
+                if success:
+                    break
+            except Exception as e:
+                log(f"⚠️ Lần {i} thất bại: {e}")
+                if i == MAX_RETRIES:
+                    log("❌ Đã thử 3 lần, không thành công!")
+
+    send_email(success, keywords, ACCOUNT)
 
 asyncio.run(run())
