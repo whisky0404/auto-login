@@ -37,10 +37,8 @@ def log(msg):
     logs.append(entry)
 
 def fetch_keywords(stt_from, stt_to):
-    """Đọc keywords từ Google Sheet theo dải STT"""
     with urllib.request.urlopen(SHEET_CSV_URL) as response:
         content = response.read().decode("utf-8")
-    
     reader = csv.DictReader(content.splitlines())
     keywords = []
     for row in reader:
@@ -54,7 +52,6 @@ def fetch_keywords(stt_from, stt_to):
                 })
         except:
             continue
-    
     keywords.sort(key=lambda x: x["stt"])
     return keywords
 
@@ -99,56 +96,41 @@ def send_email(success: bool, keywords: list):
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
-async def update_keywords(page, keywords):
-    """Cập nhật lần lượt từng keyword trên 2pink"""
-    
-    # Lấy danh sách URL rows trong bảng
-    url_rows = page.locator("#ctl00_ContentPlaceHolder1_ListView1 tr.item, #ctl00_ContentPlaceHolder1_ListView1 tr.altitem")
-    count = await url_rows.count()
-    log(f"📋 Tìm thấy {count} URL rows trên 2pink")
+async def update_one(page, index, kw):
+    """Cập nhật 1 keyword theo index (0-based)"""
+    log(f"🔄 [{index+1}] Cập nhật STT {kw['stt']}: {kw['key']}")
 
-    for i, kw in enumerate(keywords):
-        if i >= count:
-            log(f"⚠️ Không đủ rows cho STT {kw['stt']}, bỏ qua")
-            continue
+    # Click vào span URL trong danh sách để mở form
+    span_id = f"ctl00_ContentPlaceHolder1_ListView1_ctrl{index}_labUrl"
+    await page.click(f"#{span_id}")
+    await page.wait_for_timeout(2000)
 
-        log(f"🔄 Cập nhật STT {kw['stt']}: {kw['key']}")
+    # Điền keyword
+    kw_input = page.locator("#ctl00_ContentPlaceHolder1_txtKeyWord")
+    await kw_input.triple_click()
+    await kw_input.fill(kw["key"])
+    await page.wait_for_timeout(500)
 
-        # Click vào URL row để mở form sửa
-        row = url_rows.nth(i)
-        link_btn = row.locator("a, [id*='LinkButton']").first
-        await link_btn.click()
-        await page.wait_for_timeout(2000)
+    # Điền URL
+    url_input = page.locator("#ctl00_ContentPlaceHolder1_txtStep1")
+    await url_input.triple_click()
+    await url_input.fill(kw["url"])
+    await page.wait_for_timeout(500)
 
-        # Double click vào ô keyword (Google.com input)
-        keyword_input = page.locator("input[id*='txtUrl'], input[type='text']").nth(1)
-        await keyword_input.dblclick()
-        await page.wait_for_timeout(500)
-        await keyword_input.fill(kw["key"])
-        await page.wait_for_timeout(500)
+    # Thay đổi thời gian chờ (random 25-115 giây)
+    # Chỉ đổi ô txtWait1 (Click vào link) vì các ô Click ngẫu nhiên để @
+    wait_input = page.locator("#ctl00_ContentPlaceHolder1_txtWait1")
+    rand_time = random.randint(25, 115)
+    await wait_input.triple_click()
+    await wait_input.fill(str(rand_time))
+    await page.wait_for_timeout(500)
 
-        # Double click vào ô URL (Click vào link)
-        url_input = page.locator("input[id*='txtLink'], a[id*='lnkUrl'], input[type='text']").nth(2)
-        await url_input.dblclick()
-        await page.wait_for_timeout(500)
-        await url_input.fill(kw["url"])
-        await page.wait_for_timeout(500)
+    # Bấm Cập nhật Url
+    await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
+    await page.wait_for_load_state("networkidle")
+    await page.wait_for_timeout(2000)
 
-        # Thay đổi thời gian chờ click ngẫu nhiên (25-115 giây)
-        time_inputs = page.locator("input[id*='txtTime'], input[type='text'][value]")
-        time_count = await time_inputs.count()
-        for t in range(time_count):
-            rand_time = random.randint(25, 115)
-            await time_inputs.nth(t).triple_click()
-            await time_inputs.nth(t).fill(str(rand_time))
-            await page.wait_for_timeout(300)
-
-        # Bấm Cập nhật URL
-        await page.click("input[value='Cập nhật Url'], button:has-text('Cập nhật Url')")
-        await page.wait_for_load_state("networkidle")
-        await page.wait_for_timeout(2000)
-
-        log(f"✅ Xong STT {kw['stt']}: {kw['key']}")
+    log(f"✅ [{index+1}] Xong STT {kw['stt']}: {kw['key']} | Thời gian chờ: {rand_time}s")
 
 async def attempt(p, keywords):
     browser = await p.chromium.launch(headless=True)
@@ -171,8 +153,12 @@ async def attempt(p, keywords):
         await page.goto(DASHBOARD_URL)
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
+        log("✅ Đã vào dashboard!")
 
-        await update_keywords(page, keywords)
+        # Cập nhật lần lượt từng keyword
+        for i, kw in enumerate(keywords):
+            await update_one(page, i, kw)
+
         return True
 
     except Exception as e:
@@ -182,7 +168,6 @@ async def attempt(p, keywords):
         await browser.close()
 
 async def run():
-    # Xác định dải STT
     if ACCOUNT not in ACCOUNT_RANGES:
         log(f"❌ Account {ACCOUNT} chưa được cấu hình!")
         return
