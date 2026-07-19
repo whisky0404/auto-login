@@ -20,7 +20,6 @@ ACCOUNT   = os.environ.get("ACCOUNT", "?")
 GMAIL_USER = os.environ.get("GMAIL_USER", "")
 GMAIL_PASS = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-# Cấu hình từng tài khoản: (STT từ, STT đến, URL dashboard)
 ACCOUNT_CONFIG = {
     "1": (1,  5,  "https://2pink.org/dashboard/live-traffic/ivivucom-262112"),
     "2": (6,  10, "https://2pink.org/dashboard/live-traffic/wwwivivucom-263440"),
@@ -98,45 +97,42 @@ def send_email(success: bool, keywords: list):
 async def update_one(page, row_index, kw):
     log(f"🔄 [{row_index+1}/5] Cập nhật STT {kw['stt']}: {kw['key']}")
 
-    # Click vào LinkButton để mở form sửa (ctrl0, ctrl1, ctrl2...)
-    link_id = f"#ctl00_ContentPlaceHolder1_ListView1_ctrl{row_index}_LinkButton1"
-    log(f"🔍 Click: {link_id}")
-    await page.click(link_id, timeout=60000)
+    # Bước 1: Click vào link để mở form
+    links = page.locator("a[id*='ListView1'][id*='LinkButton1']")
+    count = await links.count()
+    log(f"🔍 Tìm thấy {count} links, click index {row_index}")
+    await links.nth(row_index).click()
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
-    # Điền keyword
-    kw_input = page.locator("#ctl00_ContentPlaceHolder1_txtKeyWord")
-    await kw_input.triple_click()
-    await kw_input.fill(kw["key"])
+    # Bước 2: Fill keyword (ghi đè trực tiếp)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtKeyWord", kw["key"])
     await page.wait_for_timeout(500)
+    log(f"✏️ Keyword: {kw['key']}")
 
-    # Điền URL
-    url_input = page.locator("#ctl00_ContentPlaceHolder1_txtStep1")
-    await url_input.triple_click()
-    await url_input.fill(kw["url"])
+    # Bước 3: Fill URL (ghi đè trực tiếp)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtStep1", kw["url"])
     await page.wait_for_timeout(500)
+    log(f"🔗 URL: {kw['url']}")
 
-    # Thời gian chờ random 25-115 giây
-    wait_input = page.locator("#ctl00_ContentPlaceHolder1_txtWait1")
+    # Bước 4: Fill thời gian chờ random 25-115 giây
     rand_time = random.randint(25, 115)
-    await wait_input.triple_click()
-    await wait_input.fill(str(rand_time))
-    await page.wait_for_timeout(500)
+    await page.fill("#ctl00_ContentPlaceHolder1_txtWait1", str(rand_time))
+    await page.wait_for_timeout(300)
+    log(f"⏱️ Thời gian chờ: {rand_time}s")
 
-    # Bấm Cập nhật Url
+    # Bước 5: Bấm Cập nhật Url
     await page.click("#ctl00_ContentPlaceHolder1_btnUpdateUrl")
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
-    log(f"✅ [{row_index+1}/5] Xong: {kw['key']} | {rand_time}s")
+    log(f"✅ [{row_index+1}/5] Xong STT {kw['stt']}")
 
 async def attempt(p, keywords, dashboard_url):
     browser = await p.chromium.launch(headless=True)
     page = await browser.new_page()
 
     try:
-        # Đăng nhập
         await page.goto(LOGIN_URL)
         await page.wait_for_load_state("networkidle")
         await page.click("text=Đăng nhập", timeout=60000)
@@ -149,13 +145,11 @@ async def attempt(p, keywords, dashboard_url):
         await page.wait_for_timeout(2000)
         log("✅ Đã đăng nhập!")
 
-        # Vào đúng dashboard của tài khoản
         await page.goto(dashboard_url)
         await page.wait_for_load_state("networkidle")
         await page.wait_for_timeout(2000)
-        log(f"✅ Đã vào dashboard: {dashboard_url}")
+        log("✅ Đã vào dashboard!")
 
-        # Cập nhật lần lượt từng keyword
         for i, kw in enumerate(keywords):
             await update_one(page, i, kw)
 
