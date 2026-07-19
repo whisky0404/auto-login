@@ -21,7 +21,6 @@ ACCOUNT   = os.environ.get("ACCOUNT", "?")
 GMAIL_USER = os.environ.get("GMAIL_USER", "")
 GMAIL_PASS = os.environ.get("GMAIL_APP_PASSWORD", "")
 
-# Dải STT cho từng tài khoản
 ACCOUNT_RANGES = {
     "1": (1, 5),
     "2": (6, 10),
@@ -96,13 +95,14 @@ def send_email(success: bool, keywords: list):
     except Exception as e:
         print(f"⚠️ Lỗi gửi email: {e}")
 
-async def update_one(page, index, kw):
-    """Cập nhật 1 keyword theo index (0-based)"""
-    log(f"🔄 [{index+1}] Cập nhật STT {kw['stt']}: {kw['key']}")
+async def update_one(page, row_index, kw):
+    log(f"🔄 [{row_index+1}/5] Cập nhật STT {kw['stt']}: {kw['key']}")
 
-    # Click vào span URL trong danh sách để mở form
-    span_id = f"ctl00_ContentPlaceHolder1_ListView1_ctrl{index}_labUrl"
-    await page.click(f"#{span_id}")
+    # Click vào LinkButton để mở form sửa
+    link_id = f"#ctl00_ContentPlaceHolder1_ListView1_ctrl{row_index}_LinkButton1"
+    log(f"🔍 Click: {link_id}")
+    await page.click(link_id, timeout=60000)
+    await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
     # Điền keyword
@@ -117,8 +117,7 @@ async def update_one(page, index, kw):
     await url_input.fill(kw["url"])
     await page.wait_for_timeout(500)
 
-    # Thay đổi thời gian chờ (random 25-115 giây)
-    # Chỉ đổi ô txtWait1 (Click vào link) vì các ô Click ngẫu nhiên để @
+    # Thời gian chờ random 25-115 giây
     wait_input = page.locator("#ctl00_ContentPlaceHolder1_txtWait1")
     rand_time = random.randint(25, 115)
     await wait_input.triple_click()
@@ -130,14 +129,13 @@ async def update_one(page, index, kw):
     await page.wait_for_load_state("networkidle")
     await page.wait_for_timeout(2000)
 
-    log(f"✅ [{index+1}] Xong STT {kw['stt']}: {kw['key']} | Thời gian chờ: {rand_time}s")
+    log(f"✅ [{row_index+1}/5] Xong: {kw['key']} | {rand_time}s")
 
 async def attempt(p, keywords):
     browser = await p.chromium.launch(headless=True)
     page = await browser.new_page()
 
     try:
-        # Đăng nhập
         await page.goto(LOGIN_URL)
         await page.wait_for_load_state("networkidle")
         await page.click("text=Đăng nhập", timeout=60000)
@@ -155,7 +153,6 @@ async def attempt(p, keywords):
         await page.wait_for_timeout(2000)
         log("✅ Đã vào dashboard!")
 
-        # Cập nhật lần lượt từng keyword
         for i, kw in enumerate(keywords):
             await update_one(page, i, kw)
 
